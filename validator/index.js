@@ -16,7 +16,6 @@ await consumer.run({
     eachMessage: async ({ message }) => {
         const key = message.key?.toString();
         const evt = JSON.parse(message.value.toString());
-
         if (evt.type === "NewOrderReceived") {
             const email = evt.email;
             const amount = evt.payload.fiat;

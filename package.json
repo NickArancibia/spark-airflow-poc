@@ -2,15 +2,25 @@
     "name": "kafka-demo",
     "type": "module",
     "dependencies": {
+        "express": "^4.18.2",
         "kafkajs": "^2.2.4",
-        "uuid": "^9.0.1",
-        "express": "^4.18.2"
+        "uuid": "^9.0.1"
     },
     "scripts": {
+        "up": "docker compose up -d",
+        "down": "docker compose down",
         "validator": "node validator/index.js",
         "liquidity": "node liquidity/index.js",
         "payment": "node payment/index.js",
-        "send": "node seed/send-order.js",
-        "seeder": "node seed/server.js"
+        "seeder": "node seed/server.js",
+        "dev:validator": "nodemon validator/index.js",
+        "dev:liquidity": "nodemon liquidity/index.js",
+        "dev:payment": "nodemon payment/index.js",
+        "dev:seeder": "nodemon seed/server.js",
+        "dev:all": "concurrently -n validator,liquidity,payment,seeder -c green,blue,magenta,cyan \"nodemon validator/index.js\" \"nodemon liquidity/index.js\" \"nodemon payment/index.js\" \"nodemon seed/server.js\""
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1",
+        "nodemon": "^3.1.10"
     }
 }

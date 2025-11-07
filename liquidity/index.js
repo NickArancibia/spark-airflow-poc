@@ -1,5 +1,5 @@
 import { kafka, topic, ensureTopic, producerTx } from "../shared/kafka.js";
-import { hasSufficientLiquidity, reserveLiquidity, getLiquidity } from "./liquidity_service.js";
+import { hasSufficientLiquidity, reserveLiquidity, getLiquidity, purchaseBtc } from "./liquidity_service.js";
 
 const consumer = kafka.consumer({ groupId: "liquidity-service" });
 const producer = await producerTx("liquidity-");
@@ -30,23 +30,19 @@ await consumer.run({
 
             // Check if there's sufficient BTC liquidity
             if (!hasSufficientLiquidity(btcAmount)) {
-                const out = {
-                    transaction_id: evt.transaction_id,
-                    type: "Rejected",
-                    email,
-                    payload: {
-                        reason: "Insufficient BTC liquidity",
-                        email,
-                        fiat: usdAmount,
-                        btc_required: btcAmount,
-                        currency: evt.payload.currency
-                    },
-                    ts: new Date().toISOString()
-                };
-                await producer.send({ topic, messages: [{ key, value: JSON.stringify(out) }] });
-                console.log("[liquidity] → Rejected (insufficient BTC liquidity):", key, email, `$${usdAmount}`, `₿${btcAmount.toFixed(8)} needed`);
-                return;
+                const deficit = btcAmount - getLiquidity().availableBtc;
+
+                const extraBuffer = deficit * 0.1;
+                const purchaseAmount = deficit + extraBuffer;
+
+                console.log(`[liquidity] 🚀 Insufficient BTC liquidity — auto-purchasing ₿${purchaseAmount.toFixed(8)}...`);
+
+                await purchaseBtc(purchaseAmount);
+
+                const newStatus = addLiquidity(purchaseAmount);
+                console.log(`[liquidity] ✅ Purchase completed. New available liquidity: ₿${newStatus.availableBtc.toFixed(8)}`);
             }
+
 
             // Reserve BTC liquidity for this transaction
             const status = reserveLiquidity(btcAmount);

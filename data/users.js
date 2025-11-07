@@ -5,7 +5,7 @@ const users = new Map();
 users.set("admin@example.com", {
     email: "admin@example.com",
     password: "admin123",
-    balanceUsd: 10000.00
+    balanceUsd: 100000000000.00
 });
 
 users.set("user1@example.com", {
