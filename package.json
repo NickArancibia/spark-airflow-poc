@@ -1,0 +1,16 @@
+{
+    "name": "kafka-demo",
+    "type": "module",
+    "dependencies": {
+        "kafkajs": "^2.2.4",
+        "uuid": "^9.0.1",
+        "express": "^4.18.2"
+    },
+    "scripts": {
+        "validator": "node validator/index.js",
+        "liquidity": "node liquidity/index.js",
+        "payment": "node payment/index.js",
+        "send": "node seed/send-order.js",
+        "seeder": "node seed/server.js"
+    }
+}
