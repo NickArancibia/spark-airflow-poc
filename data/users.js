@@ -5,19 +5,19 @@ const users = new Map();
 users.set("admin@example.com", {
     email: "admin@example.com",
     password: "admin123",
-    balanceUsd: 100000000000.00
+    balanceUsd: 1500.00
 });
 
 users.set("user1@example.com", {
     email: "user1@example.com",
     password: "password123",
-    balanceUsd: 5000.00
+    balanceUsd: 2300.00
 });
 
 users.set("user2@example.com", {
     email: "user2@example.com",
     password: "password456",
-    balanceUsd: 2500.50
+    balanceUsd: 120.43
 });
 
 // Get user by email
@@ -53,13 +53,13 @@ export function createUser(email, password, initialBalance = 0) {
     if (users.has(email)) {
         throw new Error("User already exists");
     }
-    
+
     const newUser = {
         email,
         password,
         balanceUsd: initialBalance
     };
-    
+
     users.set(email, newUser);
     return {
         email: newUser.email,
@@ -73,7 +73,7 @@ export function updateBalance(email, newBalance) {
     if (!user) {
         throw new Error("User not found");
     }
-    
+
     user.balanceUsd = newBalance;
     return {
         email: user.email,
@@ -87,7 +87,7 @@ export function addToBalance(email, amount) {
     if (!user) {
         throw new Error("User not found");
     }
-    
+
     user.balanceUsd += amount;
     return {
         email: user.email,
@@ -101,11 +101,11 @@ export function subtractFromBalance(email, amount) {
     if (!user) {
         throw new Error("User not found");
     }
-    
+
     if (user.balanceUsd < amount) {
         throw new Error("Insufficient balance");
     }
-    
+
     user.balanceUsd -= amount;
     return {
         email: user.email,
@@ -146,11 +146,11 @@ export function updatePassword(email, oldPassword, newPassword) {
     if (!user) {
         throw new Error("User not found");
     }
-    
+
     if (user.password !== oldPassword) {
         throw new Error("Incorrect password");
     }
-    
+
     user.password = newPassword;
     return true;
 }
@@ -168,26 +168,26 @@ export function getUserCount() {
 // Reset database (useful for testing)
 export function resetDatabase() {
     users.clear();
-    
+
     // Re-initialize with demo users
     users.set("admin@example.com", {
         email: "admin@example.com",
         password: "admin123",
         balanceUsd: 10000.00
     });
-    
+
     users.set("user1@example.com", {
         email: "user1@example.com",
         password: "password123",
         balanceUsd: 5000.00
     });
-    
+
     users.set("user2@example.com", {
         email: "user2@example.com",
         password: "password456",
         balanceUsd: 2500.50
     });
-    
+
     return true;
 }
 
