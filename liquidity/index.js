@@ -1,11 +1,9 @@
 import { kafka, topic, ensureTopic, producerTx } from "../shared/kafka.js";
-import { hasSufficientLiquidity, reserveLiquidity, getLiquidity, purchaseBtc } from "./liquidity_service.js";
+import { BTC_PRICE_USD, hasSufficientLiquidity, reserveLiquidity, getLiquidity, purchaseBtc } from "./liquidity_service.js";
 
 const consumer = kafka.consumer({ groupId: "liquidity-service" });
 const producer = await producerTx("liquidity-");
 
-// BTC price (in production, this would come from an oracle/API)
-const BTC_PRICE_USD = 101232.12;
 
 await ensureTopic();
 await consumer.connect();
@@ -20,6 +18,7 @@ await consumer.run({
     eachMessage: async ({ message }) => {
         const key = message.key?.toString();
         const evt = JSON.parse(message.value.toString());
+        console.log('Liquidity received transaction id', evt.transaction_id);
 
         if (evt.type === "TransactionValidated") {
             const usdAmount = evt.payload.fiat;
@@ -36,8 +35,7 @@ await consumer.run({
                 const purchaseAmount = deficit + extraBuffer;
 
                 console.log(`[liquidity] 🚀 Insufficient BTC liquidity — auto-purchasing ₿${purchaseAmount.toFixed(8)}...`);
-
-                const newStatus = await purchaseBtc(purchaseAmount);
+                const newStatus = purchaseBtc(purchaseAmount);
                 console.log(`[liquidity] ✅ Purchase completed. New available liquidity: ₿${newStatus.availableBtc.toFixed(8)}`);
             }
 

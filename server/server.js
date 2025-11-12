@@ -59,7 +59,7 @@ await consumer.subscribe({ topic, fromBeginning: false });
 consumer.run({
     eachMessage: async ({ message }) => {
         const evt = JSON.parse(message.value.toString());
-        const transaction_id = evt.transaction_id;
+        const transaction_id = message.key?.toString();
 
         console.log("[seed] event received:", evt.type, transaction_id);
 

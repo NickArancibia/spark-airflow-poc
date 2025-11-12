@@ -16,6 +16,7 @@ await consumer.run({
     eachMessage: async ({ message }) => {
         const key = message.key?.toString();
         const evt = JSON.parse(message.value.toString());
+        console.log('Validator received transaction id', evt.transaction_id);
         if (evt.type === "NewOrderReceived") {
             const email = evt.email;
             const amount = evt.payload.fiat;
