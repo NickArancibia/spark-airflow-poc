@@ -37,12 +37,9 @@ await consumer.run({
 
                 console.log(`[liquidity] 🚀 Insufficient BTC liquidity — auto-purchasing ₿${purchaseAmount.toFixed(8)}...`);
 
-                await purchaseBtc(purchaseAmount);
-
-                const newStatus = addLiquidity(purchaseAmount);
+                const newStatus = await purchaseBtc(purchaseAmount);
                 console.log(`[liquidity] ✅ Purchase completed. New available liquidity: ₿${newStatus.availableBtc.toFixed(8)}`);
             }
-
 
             // Reserve BTC liquidity for this transaction
             const status = reserveLiquidity(btcAmount);
@@ -55,7 +52,6 @@ await consumer.run({
                     email,
                     btc_amount: btcAmount,
                     fiat: usdAmount,
-                    currency: evt.payload.currency,
                     btc_price: BTC_PRICE_USD,
                     trade_id: "t-" + Math.random().toString(16).slice(2)
                 },

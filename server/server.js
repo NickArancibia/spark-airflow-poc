@@ -85,13 +85,13 @@ app.post("/transaction", basicAuth, async (req, res) => {
     const transaction_id = uuid();
 
     try {
-        const { destinationIban, amount, currency } = req.body;
+        const { destinationIban, amount } = req.body;
 
-        // Validate parameters
-        if (!destinationIban || !amount || !currency) {
+    // Validate parameters (currency removed)
+        if (!destinationIban || !amount) {
             return res.status(400).json({
                 error: "Missing required parameters",
-                required: ["destinationIban", "amount", "currency"]
+                required: ["destinationIban", "amount"]
             });
         }
 
@@ -123,8 +123,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
             email: req.user.email,
             payload: {
                 destinationIban,
-                fiat: amount,
-                currency
+                fiat: amount
             },
             ts: new Date().toISOString()
         };
@@ -135,7 +134,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
             messages: [{ key: transaction_id, value: JSON.stringify(event) }]
         });
 
-        console.log(`[seed] sent NewOrderReceived: ${transaction_id} | ${amount} ${currency} -> ${destinationIban}`);
+    console.log(`[seed] sent NewOrderReceived: ${transaction_id} | ${amount} -> ${destinationIban}`);
         console.log(`[seed] waiting for response: ${transaction_id}...`);
 
         // Wait for response
@@ -151,7 +150,6 @@ app.post("/transaction", basicAuth, async (req, res) => {
                 data: {
                     destinationIban,
                     amount,
-                    currency,
                     invoice_id: resultEvent.payload.invoice_id,
                     txid: resultEvent.payload.txid
                 },
@@ -165,8 +163,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
                 transaction_id,
                 data: {
                     destinationIban,
-                    amount,
-                    currency
+                    amount
                 },
                 message: "Transaction was rejected during validation",
                 timestamp: resultEvent.ts

@@ -12,7 +12,7 @@
         "validator": "node validator/index.js",
         "liquidity": "node liquidity/index.js",
         "payment": "node payment/index.js",
-        "seeder": "node seed/server.js",
+        "server": "node server/server.js",
         "dev:validator": "nodemon validator/index.js",
         "dev:liquidity": "nodemon liquidity/index.js",
         "dev:payment": "nodemon payment/index.js",

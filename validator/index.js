@@ -27,8 +27,7 @@ await consumer.run({
                     type: "Rejected",
                     payload: {
                         reason: "Missing email",
-                        fiat: amount,
-                        currency: evt.payload.currency
+                        fiat: amount
                     },
                     ts: new Date().toISOString()
                 };
@@ -45,8 +44,7 @@ await consumer.run({
                     payload: {
                         reason: "User not found",
                         email,
-                        fiat: amount,
-                        currency: evt.payload.currency
+                        fiat: amount
                     },
                     ts: new Date().toISOString()
                 };
@@ -63,8 +61,7 @@ await consumer.run({
                     payload: {
                         reason: "Insufficient balance",
                         email,
-                        fiat: amount,
-                        currency: evt.payload.currency
+                        fiat: amount
                     },
                     ts: new Date().toISOString()
                 };
@@ -80,8 +77,7 @@ await consumer.run({
                 email,
                 payload: {
                     email,
-                    fiat: amount,
-                    currency: evt.payload.currency
+                    fiat: amount
                 },
                 ts: new Date().toISOString()
             };
