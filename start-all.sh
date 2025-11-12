@@ -36,9 +36,9 @@ tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run liquidity" C-m
 tmux split-window -v -t $SESSION:validator.0
 tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run payment" C-m
 
-# Panel 4: Seeder HTTP
+# Panel 4: API Server
 tmux split-window -v -t $SESSION:validator.1
-tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run seeder" C-m
+tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run api" C-m
 
 # Ajustar layout
 tmux select-layout -t $SESSION:validator tiled
