@@ -1,11 +1,13 @@
 import express from "express";
 import { v4 as uuid } from "uuid";
 import { kafka, ensureTopic, producerTx, topic } from "../shared/kafka.js";
-import { authenticateUser } from "../data/users.js";
+import { authenticateUser, getUserByEmail, getBalance, userExists } from "../data/users.js";
+import { getLiquidity } from "../liquidity/liquidity_service.js";
 
 const app = express();
 const PORT = 3000;
 const REQUEST_TIMEOUT = 30000; // 30 seconds
+const BTC_PRICE_USD = 101232.12; // BTC price (in production, this would come from an oracle/API)
 
 // Basic Authentication middleware
 const basicAuth = (req, res, next) => {
@@ -48,10 +50,10 @@ const pendingRequests = new Map();
 
 // Initialize Kafka Producer
 await ensureTopic();
-const producer = await producerTx("seed-");
+const producer = await producerTx("api-");
 
 // Initialize Kafka Consumer to listen for responses
-const consumer = kafka.consumer({ groupId: "seed-http-server" });
+const consumer = kafka.consumer({ groupId: "api-http-server" });
 await consumer.connect();
 await consumer.subscribe({ topic, fromBeginning: false });
 
@@ -61,7 +63,7 @@ consumer.run({
         const evt = JSON.parse(message.value.toString());
         const transaction_id = message.key?.toString();
 
-        console.log("[seed] event received:", evt.type, transaction_id);
+        console.log("[api] event received:", evt.type, transaction_id);
 
         if (evt.type !== "PaymentCompleted" && evt.type !== "Rejected") {
             return;
@@ -75,10 +77,137 @@ consumer.run({
         }
     }
 }).catch(err => {
-    console.error("[seed] Consumer error:", err);
+    console.error("[api] Consumer error:", err);
 });
 
-console.log("[seed] Consumer started, listening for responses...");
+console.log("[api] Consumer started, listening for responses...");
+
+// ==================== ENDPOINTS ====================
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+    res.json({
+        status: "ok",
+        service: "api-server",
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Get system info (BTC price, etc.)
+app.get("/system/info", (req, res) => {
+    res.json({
+        btcPriceUsd: BTC_PRICE_USD,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Get specific user by email
+app.get("/users/:email", basicAuth, (req, res) => {
+    try {
+        const { email } = req.params;
+
+        // Users can only access their own info
+        if (req.user.email !== email) {
+            return res.status(403).json({
+                success: false,
+                error: "Forbidden",
+                message: "You can only access your own information"
+            });
+        }
+
+        if (!userExists(email)) {
+            return res.status(404).json({
+                success: false,
+                error: "Not found",
+                message: `User ${email} not found`
+            });
+        }
+
+        const user = getUserByEmail(email);
+        res.json({
+            success: true,
+            user: {
+                email: user.email,
+                balanceUsd: user.balanceUsd,
+                balanceBtc: user.balanceUsd / BTC_PRICE_USD
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: "Internal server error",
+            message: error.message
+        });
+    }
+});
+
+// Get user balance
+app.get("/users/:email/balance", basicAuth, (req, res) => {
+    try {
+        const { email } = req.params;
+
+        // Users can only access their own balance
+        if (req.user.email !== email) {
+            return res.status(403).json({
+                success: false,
+                error: "Forbidden",
+                message: "You can only access your own balance"
+            });
+        }
+
+        if (!userExists(email)) {
+            return res.status(404).json({
+                success: false,
+                error: "Not found",
+                message: `User ${email} not found`
+            });
+        }
+
+        const balance = getBalance(email);
+        res.json({
+            success: true,
+            email: email,
+            balanceUsd: balance,
+            balanceBtc: balance / BTC_PRICE_USD,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: "Internal server error",
+            message: error.message
+        });
+    }
+});
+
+// Get liquidity status
+app.get("/liquidity", (req, res) => {
+    try {
+        const liquidity = getLiquidity();
+        const utilizationPercent = (liquidity.reservedBtc / liquidity.totalBtc) * 100;
+
+        res.json({
+            success: true,
+            liquidity: {
+                totalBtc: liquidity.totalBtc,
+                availableBtc: liquidity.availableBtc,
+                reservedBtc: liquidity.reservedBtc,
+                utilizationPercent: utilizationPercent,
+                totalUsd: liquidity.totalBtc * BTC_PRICE_USD,
+                availableUsd: liquidity.availableBtc * BTC_PRICE_USD,
+                btcPriceUsd: BTC_PRICE_USD
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: "Internal server error",
+            message: error.message
+        });
+    }
+});
 
 // Endpoint to create a new transaction (protected with Basic Auth)
 app.post("/transaction", basicAuth, async (req, res) => {
@@ -87,7 +216,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
     try {
         const { destinationIban, amount } = req.body;
 
-    // Validate parameters (currency removed)
+        // Validate parameters (currency removed)
         if (!destinationIban || !amount) {
             return res.status(400).json({
                 error: "Missing required parameters",
@@ -134,15 +263,15 @@ app.post("/transaction", basicAuth, async (req, res) => {
             messages: [{ key: transaction_id, value: JSON.stringify(event) }]
         });
 
-    console.log(`[seed] sent NewOrderReceived: ${transaction_id} | ${amount} -> ${destinationIban}`);
-        console.log(`[seed] waiting for response: ${transaction_id}...`);
+        console.log(`[api] sent NewOrderReceived: ${transaction_id} | ${amount} -> ${destinationIban}`);
+        console.log(`[api] waiting for response: ${transaction_id}...`);
 
         // Wait for response
         const resultEvent = await responsePromise;
 
         // Process according to the received event type
         if (resultEvent.type === "PaymentCompleted") {
-            console.log(`[seed] ✓ PaymentCompleted received: ${transaction_id}`);
+            console.log(`[api] ✓ PaymentCompleted received: ${transaction_id}`);
             return res.status(200).json({
                 success: true,
                 status: "completed",
@@ -156,7 +285,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
                 timestamp: resultEvent.ts
             });
         } else if (resultEvent.type === "Rejected") {
-            console.log(`[seed] ✗ Rejected received: ${transaction_id}`);
+            console.log(`[api] ✗ Rejected received: ${transaction_id}`);
             return res.status(422).json({
                 success: false,
                 status: "rejected",
@@ -170,7 +299,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
             });
         } else {
             // Unexpected event
-            console.log(`[seed] ? Unexpected event: ${resultEvent.type} for ${transaction_id}`);
+            console.log(`[api] ? Unexpected event: ${resultEvent.type} for ${transaction_id}`);
             return res.status(500).json({
                 success: false,
                 status: "unknown",
@@ -184,7 +313,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
         // Cleanup on error
         pendingRequests.delete(transaction_id);
 
-        console.error("[seed] Error processing transaction:", error);
+        console.error("[api] Error processing transaction:", error);
 
         // If timeout
         if (error.message.includes("Timeout")) {
@@ -208,20 +337,34 @@ app.post("/transaction", basicAuth, async (req, res) => {
     }
 });
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-    res.json({ status: "ok", service: "seeder" });
-});
-
 // Start server
 app.listen(PORT, () => {
-    console.log(`[seed] HTTP Server running at http://localhost:${PORT}`);
-    console.log(`[seed] Endpoint: POST http://localhost:${PORT}/transaction`);
-    console.log(`[seed] Health check: GET http://localhost:${PORT}/health`);
+    console.log(`[api] 🚀 API Server running at http://localhost:${PORT}`);
+    console.log(`[api] 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 AVAILABLE ENDPOINTS:
+
+Health & System:
+  GET  /health                    - Health check
+  GET  /system/info               - System information (BTC price)
+
+Users:
+  GET  /users/:email              - Get user info
+  GET  /users/:email/balance      - Get user balance
+
+Liquidity:
+  GET  /liquidity                 - Get BTC liquidity status
+
+Transactions:
+  POST /transaction               - Create new transaction
+
+🔐 Authentication: Basic Auth required for most endpoints
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`);
 });
 
 // Kafka error handling
 producer.on("producer.disconnect", () => {
-    console.error("[seed] Producer disconnected");
+    console.error("[api] Producer disconnected");
 });
 

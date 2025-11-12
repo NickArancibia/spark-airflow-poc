@@ -38,7 +38,7 @@ tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run payment" C-m
 
 # Panel 4: API Server
 tmux split-window -v -t $SESSION:validator.1
-tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run api" C-m
+tmux send-keys -t $SESSION:validator "cd $(pwd) && npm run server" C-m
 
 # Ajustar layout
 tmux select-layout -t $SESSION:validator tiled
