@@ -35,7 +35,7 @@ await consumer.run({
                 const purchaseAmount = deficit + extraBuffer;
 
                 console.log(`[liquidity] 🚀 Insufficient BTC liquidity — auto-purchasing ₿${purchaseAmount.toFixed(8)}...`);
-                const newStatus = purchaseBtc(purchaseAmount);
+                const newStatus = await purchaseBtc(purchaseAmount);
                 console.log(`[liquidity] ✅ Purchase completed. New available liquidity: ₿${newStatus.availableBtc.toFixed(8)}`);
             }
 

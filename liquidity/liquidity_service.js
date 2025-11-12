@@ -130,7 +130,7 @@ export function resetLiquidity() {
 }
 
 // Simula una compra de BTC y actualiza la liquidez real
-export function purchaseBtc(amountBtc, priceUsd = BTC_PRICE_USD) {
+export async function purchaseBtc(amountBtc, priceUsd = BTC_PRICE_USD) {
     if (amountBtc <= 0) {
         throw new Error("Purchase amount must be positive");
     }
@@ -138,7 +138,7 @@ export function purchaseBtc(amountBtc, priceUsd = BTC_PRICE_USD) {
     const estimatedCost = amountBtc * priceUsd;
     console.log(`[liquidity] 🛒 Buying ₿${amountBtc.toFixed(8)} (~$${estimatedCost.toLocaleString()}) from exchange...`);
 
-    // await new Promise(res => setTimeout(res, 500));
+    await new Promise(res => setTimeout(res, 500));
 
     // Actualizar liquidez
     liquidity.totalBtc += amountBtc;
