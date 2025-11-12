@@ -63,11 +63,11 @@ consumer.run({
         const evt = JSON.parse(message.value.toString());
         const transaction_id = message.key?.toString();
 
-        console.log("[api] event received:", evt.type, transaction_id);
-
         if (evt.type !== "PaymentCompleted" && evt.type !== "Rejected") {
             return;
         }
+
+        console.log("[api] event received:", evt.type, transaction_id);
 
         // Check if there's a pending request waiting for this response
         if (pendingRequests.has(transaction_id)) {

@@ -14,9 +14,9 @@ await consumer.run({
     eachMessage: async ({ message }) => {
         const key = message.key?.toString();
         const evt = JSON.parse(message.value.toString());
-        console.log('Payment received transaction id', evt.transaction_id);
 
         if (evt.type === "LiquidityReady") {
+            console.log('Payment received transaction id', evt.transaction_id);
             // Simulate invoice request and payment
             const out = {
                 transaction_id: evt.transaction_id,
