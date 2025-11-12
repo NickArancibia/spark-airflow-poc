@@ -17,32 +17,47 @@ await consumer.run({
         const evt = JSON.parse(message.value.toString());
 
         if (evt.type === "LiquidityReady") {
-            console.log('Payment received transaction id', evt.transaction_id);
+            console.log('[payment] Payment received transaction id', evt.transaction_id);
 
-            // Deduct user balance
-            const email = evt.email;
-            const usdAmount = evt.payload.fiat;
-            subtractFromBalance(email, usdAmount);
-            console.log(`[payment] ✓ Deducted $${usdAmount} from ${email}`);
+            try {
+                // Deduct user balance
+                const email = evt.email;
+                const usdAmount = evt.payload.fiat;
+                subtractFromBalance(email, usdAmount);
+                console.log(`[payment] ✓ Deducted $${usdAmount} from ${email}`);
 
-            // Commit liquidity (convert reserved to actual usage)
-            const btcAmount = evt.payload.btc_amount;
-            commitLiquidity(btcAmount);
-            console.log(`[payment] ✓ Committed ₿${btcAmount.toFixed(8)} from liquidity`);
+                // Commit liquidity (convert reserved to actual usage)
+                const btcAmount = evt.payload.btc_amount;
+                commitLiquidity(btcAmount);
+                console.log(`[payment] ✓ Committed ₿${btcAmount.toFixed(8)} from liquidity`);
 
-            // Simulate invoice request and payment
-            const out = {
-                transaction_id: evt.transaction_id,
-                type: "PaymentCompleted",
-                payload: {
-                    invoice_id: "inv-" + Math.random().toString(16).slice(2),
-                    txid: "btc-" + Date.now()
-                },
-                ts: new Date().toISOString()
-            };
+                // Simulate invoice request and payment
+                const out = {
+                    transaction_id: evt.transaction_id,
+                    type: "PaymentCompleted",
+                    payload: {
+                        invoice_id: "inv-" + Math.random().toString(16).slice(2),
+                        txid: "btc-" + Date.now()
+                    },
+                    ts: new Date().toISOString()
+                };
 
-            await producer.send({ topic, messages: [{ key, value: JSON.stringify(out) }] });
-            console.log("[payment] →", out.type, key);
+                await producer.send({ topic, messages: [{ key, value: JSON.stringify(out) }] });
+                console.log("[payment] →", out.type, key);
+            } catch (error) {
+                console.error(`[payment] ✗ Error processing payment for ${evt.transaction_id}:`, error.message);
+                // Even on error, we should send a response to avoid timeout
+                const errorOut = {
+                    transaction_id: evt.transaction_id,
+                    type: "Rejected",
+                    payload: {
+                        reason: `Payment processing failed: ${error.message}`
+                    },
+                    ts: new Date().toISOString()
+                };
+                await producer.send({ topic, messages: [{ key, value: JSON.stringify(errorOut) }] });
+                console.log("[payment] → Rejected", key);
+            }
         }
     }
 });
