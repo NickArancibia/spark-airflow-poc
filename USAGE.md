@@ -224,8 +224,7 @@ Authorization: Basic <user-credentials>
 Content-Type: application/json
 {
   "destinationIban": "ES1234567890123456789012",
-  "amount": 100.00,
-  "currency": "USD"
+  "amount": 100.00
 }
 ```
 
@@ -385,8 +384,7 @@ curl -u "user1@example.com:password123" \
   -H "Content-Type: application/json" \
   -d '{
     "destinationIban": "ES1234567890123456789012",
-    "amount": 100,
-    "currency": "USD"
+    "amount": 100
   }' \
   http://localhost:3000/transaction
 ```
@@ -399,8 +397,7 @@ curl -u "user1@example.com:password123" \
   -H "Content-Type: application/json" \
   -d '{
     "destinationIban": "ES1234567890123456789012",
-    "amount": 999999,
-    "currency": "USD"
+    "amount": 999999
   }' \
   http://localhost:3000/transaction
 ```

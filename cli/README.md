@@ -106,7 +106,7 @@ API_URL=http://otro-servidor:3000 npm run cli
 1. Seleccionar "💸 Ejecutar transacción"
 2. Ingresar credenciales del usuario
 3. Ingresar IBAN de destino
-4. Especificar monto y moneda
+4. Especificar monto en USD
 5. Confirmar y esperar procesamiento
 6. Ver resultado de la transacción
 

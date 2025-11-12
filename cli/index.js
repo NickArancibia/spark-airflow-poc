@@ -32,7 +32,7 @@ function showBanner() {
     console.log(chalk.gray(`   Connected to: ${API_URL}\n`));
 }
 
-// Format currency
+// Format USD amount
 function formatUSD(amount) {
     return chalk.green(`$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
 }
@@ -219,13 +219,6 @@ async function executeTransaction() {
                 if (!input || input <= 0) return "El monto debe ser mayor a 0";
                 return true;
             }
-        },
-        {
-            type: "list",
-            name: "currency",
-            message: "Moneda:",
-            choices: ["USD", "EUR", "GBP"],
-            default: "USD"
         }
     ]);
 
@@ -236,8 +229,7 @@ async function executeTransaction() {
             "/transaction",
             {
                 destinationIban: answers.destinationIban,
-                amount: answers.amount,
-                currency: answers.currency
+                amount: answers.amount
             },
             {
                 headers: {
@@ -267,8 +259,7 @@ async function executeTransaction() {
             ["Estado", chalk.green("✅ " + result.status.toUpperCase())],
             ["Transaction ID", chalk.white(result.transaction_id)],
             ["Email", chalk.white(answers.email)],
-            ["Monto", formatUSD(result.data.amount)],
-            ["Moneda", chalk.white(result.data.currency)],
+            ["Monto (USD)", formatUSD(result.data.amount)],
             ["IBAN Destino", chalk.white(result.data.destinationIban)],
             ["Invoice ID", chalk.white(result.data.invoice_id)],
             ["BTC Transaction ID", chalk.yellow(result.data.txid)],
