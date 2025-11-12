@@ -17,13 +17,8 @@
         "validator": "node validator/index.js",
         "liquidity": "node liquidity/index.js",
         "payment": "node payment/index.js",
-        "api": "node api/server.js",
         "cli": "node cli/index.js",
-        "dev:validator": "nodemon validator/index.js",
-        "dev:liquidity": "nodemon liquidity/index.js",
-        "dev:payment": "nodemon payment/index.js",
-        "dev:api": "nodemon api/server.js",
-        "dev:all": "concurrently -n validator,liquidity,payment,api -c green,blue,magenta,cyan \"nodemon validator/index.js\" \"nodemon liquidity/index.js\" \"nodemon payment/index.js\" \"nodemon api/server.js\""
+        "server": "node server/server.js"
     },
     "devDependencies": {
         "concurrently": "^9.2.1",

@@ -16,6 +16,7 @@ await consumer.run({
     eachMessage: async ({ message }) => {
         const key = message.key?.toString();
         const evt = JSON.parse(message.value.toString());
+        console.log('Validator received transaction id', evt.transaction_id);
         if (evt.type === "NewOrderReceived") {
             const email = evt.email;
             const amount = evt.payload.fiat;
@@ -27,8 +28,7 @@ await consumer.run({
                     type: "Rejected",
                     payload: {
                         reason: "Missing email",
-                        fiat: amount,
-                        currency: evt.payload.currency
+                        fiat: amount
                     },
                     ts: new Date().toISOString()
                 };
@@ -45,8 +45,7 @@ await consumer.run({
                     payload: {
                         reason: "User not found",
                         email,
-                        fiat: amount,
-                        currency: evt.payload.currency
+                        fiat: amount
                     },
                     ts: new Date().toISOString()
                 };
@@ -63,8 +62,7 @@ await consumer.run({
                     payload: {
                         reason: "Insufficient balance",
                         email,
-                        fiat: amount,
-                        currency: evt.payload.currency
+                        fiat: amount
                     },
                     ts: new Date().toISOString()
                 };
@@ -80,8 +78,7 @@ await consumer.run({
                 email,
                 payload: {
                     email,
-                    fiat: amount,
-                    currency: evt.payload.currency
+                    fiat: amount
                 },
                 ts: new Date().toISOString()
             };
