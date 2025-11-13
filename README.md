@@ -186,7 +186,6 @@ El CLI proporciona las siguientes funcionalidades:
 ¿Qué deseas hacer?
   👤 Consultar balance de usuario
   💸 Ejecutar transacción
-  🔷 Ver estado de liquidez BTC
   📊 Ver historial de transacciones
   🔌 Test de conexión API
   ─────────────────────────────
@@ -288,33 +287,6 @@ Balance USD       $2,300.00
 Balance BTC       ₿0.02272049
 BTC Price         $101,232.12
 Timestamp         2025-11-12T15:35:00.789Z
-```
-
-### 🔷 Ejemplo 4: Ver Estado de Liquidez
-
-1. Iniciar el CLI: `npm run cli`
-2. Seleccionar: `🔷 Ver estado de liquidez BTC`
-
-**Resultado esperado:**
-```
-✅ Estado de liquidez obtenido
-
-╔════════════════════════════════════╗
-║ 🔷 Liquidez BTC del Sistema        ║
-╚════════════════════════════════════╝
-
-Campo                 Valor
-Total BTC            ₿50.00000000
-Disponible BTC       ₿45.50000000
-Reservado BTC        ₿4.50000000
-Utilización          9.00%
-
-Valores en USD:
-Total USD            $5,061,606.00
-Disponible USD       $4,606,061.46
-BTC Price            $101,232.12
-
-[████████████████████████░░░░░░░░░░░░] 9.00%
 ```
 
 ## 🔐 Seguridad

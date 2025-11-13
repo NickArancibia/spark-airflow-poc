@@ -66,7 +66,6 @@ async function showMainMenu() {
             choices: [
                 { name: "👤 Consultar balance de usuario", value: "checkBalance" },
                 { name: "💸 Ejecutar transacción", value: "executeTransaction" },
-                { name: "🔷 Ver estado de liquidez BTC", value: "viewLiquidity" },
                 { name: "📊 Ver historial de transacciones", value: "viewHistory" },
                 { name: "🔌 Test de conexión API", value: "testConnection" },
                 new inquirer.Separator(),
@@ -81,9 +80,6 @@ async function showMainMenu() {
             break;
         case "executeTransaction":
             await executeTransaction();
-            break;
-        case "viewLiquidity":
-            await viewLiquidity();
             break;
         case "viewHistory":
             await viewHistory();
@@ -270,57 +266,6 @@ async function executeTransaction() {
 
     } catch (error) {
         spinner.fail(chalk.red("Error en la transacción"));
-        handleApiError(error);
-    }
-}
-
-// View BTC liquidity
-async function viewLiquidity() {
-    console.log(chalk.cyan.bold("\n🔷 Estado de Liquidez BTC\n"));
-
-    const spinner = ora("Obteniendo estado de liquidez...").start();
-
-    try {
-        const response = await apiClient.get("/liquidity");
-
-        spinner.succeed(chalk.green("Estado obtenido"));
-
-        const liquidity = response.data.liquidity;
-
-        const table = new Table({
-            head: [chalk.cyan("Métrica"), chalk.cyan("Valor")],
-            colWidths: [30, 30]
-        });
-
-        table.push(
-            ["Total BTC", formatBTC(liquidity.totalBtc)],
-            ["BTC Disponible", formatBTC(liquidity.availableBtc)],
-            ["BTC Reservado", formatBTC(liquidity.reservedBtc)],
-            ["Utilización", chalk.yellow(`${liquidity.utilizationPercent.toFixed(2)}%`)],
-            new inquirer.Separator().line,
-            ["Valor Total (USD)", formatUSD(liquidity.totalUsd)],
-            ["Valor Disponible (USD)", formatUSD(liquidity.availableUsd)],
-            ["Precio BTC", formatUSD(liquidity.btcPriceUsd)]
-        );
-
-        console.log("\n" + table.toString() + "\n");
-
-        // Visual bar
-        const barLength = 40;
-        const availablePercent = (liquidity.availableBtc / liquidity.totalBtc);
-        const filledLength = Math.round(availablePercent * barLength);
-        const emptyLength = barLength - filledLength;
-
-        console.log(chalk.white("Liquidez Disponible:"));
-        console.log(
-            chalk.green("█".repeat(filledLength)) +
-            chalk.gray("░".repeat(emptyLength)) +
-            chalk.white(` ${(availablePercent * 100).toFixed(1)}%`)
-        );
-        console.log();
-
-    } catch (error) {
-        spinner.fail(chalk.red("Error al obtener liquidez"));
         handleApiError(error);
     }
 }
