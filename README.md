@@ -61,63 +61,39 @@ Sistema distribuido basado en eventos para procesamiento de transacciones BTC en
 
 ## 📦 Requisitos Previos
 
-- **Node.js** v18 o superior
 - **Docker** y **Docker Compose**
-- **npm** v8 o superior
-
-## 🔧 Instalación
-
-1. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
+- **Node.js** v18 o superior (solo para el CLI)
 
 ## 🚀 Inicio Rápido
 
-### Paso 1: Levantar Infraestructura (Kafka + Redis)
+**Paso 1: Iniciar el sistema**
 
 ```bash
-npm run up
+npm start
 ```
 
-Este comando ejecuta `docker compose up -d` y levanta:
-- **Zookeeper** (puerto 2181)
-- **Kafka** (puerto 9092)
-- **Redis** (puerto 6379)
-- **Redis Init** (script de inicialización de datos)
-
-El contenedor `redis-init` poblará automáticamente Redis con 3 usuarios de prueba.
-
-### Paso 2: Iniciar Backend (Todos los Servicios)
+O directamente:
 
 ```bash
-npm run dev:all
+docker compose up -d
 ```
 
-Este comando inicia en paralelo con hot-reload:
-- **Validator Service** - Valida transacciones
-- **Liquidity Service** - Gestiona liquidez BTC
-- **Payment Service** - Procesa pagos
-- **API Server** - Servidor HTTP REST (puerto 3000)
+Este comando levanta **todos los servicios** en contenedores Docker.
 
-**Espera** hasta ver los siguientes mensajes que confirman que todo está listo:
+**Paso 2: Esperar unos segundos** hasta que todos los servicios estén listos.
 
-```
-[validator] listening…
-[liquidity] listening…
-[payment] listening…
-[api] 🚀 API Server running at http://localhost:3000
-```
-
-### Paso 3: Iniciar CLI (Interfaz de Usuario)
-
-En una **nueva terminal**, ejecuta:
+**Paso 3: Iniciar el CLI (en otra terminal)**
 
 ```bash
+npm install  # Solo la primera vez
 npm run cli
 ```
 
-Verás el menú interactivo del CLI.
+**Para detener el sistema:**
+
+```bash
+npm run down
+```
 
 ## 🧩 Componentes del Sistema
 
@@ -341,67 +317,9 @@ BTC Price            $101,232.12
 [████████████████████████░░░░░░░░░░░░] 9.00%
 ```
 
-## 🌐 API REST
-
-### Endpoints Disponibles
-
-#### Health Check
-```bash
-curl http://localhost:3000/health
-```
-
-#### Consultar Balance
-```bash
-curl -u "user1@example.com:password123" \
-  http://localhost:3000/users/user1@example.com/balance
-```
-
-#### Crear Transacción
-```bash
-curl -u "admin@example.com:admin123" \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d '{
-    "destinationIban": "E0123456789",
-    "amount": 100
-  }' \
-  http://localhost:3000/transaction
-```
-
-#### Ver Liquidez
-```bash
-curl http://localhost:3000/liquidity
-```
-
-## 📚 Scripts Disponibles
-
-| Script | Descripción |
-|--------|-------------|
-| `npm run up` | Levanta Docker (Kafka, Zookeeper, Redis) |
-| `npm run down` | Detiene y elimina contenedores Docker |
-| `npm run dev:all` | Inicia todos los servicios backend con hot-reload |
-| `npm run dev:validator` | Inicia solo Validator con hot-reload |
-| `npm run dev:liquidity` | Inicia solo Liquidity con hot-reload |
-| `npm run dev:payment` | Inicia solo Payment con hot-reload |
-| `npm run dev:server` | Inicia solo API Server con hot-reload |
-| `npm run validator` | Inicia Validator (producción) |
-| `npm run liquidity` | Inicia Liquidity (producción) |
-| `npm run payment` | Inicia Payment (producción) |
-| `npm run server` | Inicia API Server (producción) |
-| `npm run cli` | Inicia CLI interactivo |
-
 ## 🔐 Seguridad
 
 - **Autenticación:** Basic Auth (Base64)
-- **Passwords:** Almacenadas en texto plano en Redis (solo para la prueba de concepto, pues tampoco se pueden agregar usuarios)
+- **Passwords:** Almacenadas en texto plano en Redis (⚠️ solo para desarrollo/POC)
 - **Autorización:** Los usuarios solo pueden ver su propia información
-
-## 🛣 Roadmap / Mejoras Futuras
-
-- [ ] Encriptación de passwords (bcrypt/argon2)
-- [ ] JWT para autenticación
-- [ ] Rate limiting
-- [ ] Métricas y monitoring (Prometheus/Grafana)
-- [ ] Tests unitarios e integración
-- [ ] Dockerización completa del backend
-- [ ] CI/CD pipeline
+- **Red Docker:** Servicios aislados en red interna, solo API expone puerto 3000

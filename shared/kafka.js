@@ -1,8 +1,11 @@
 import { Kafka, logLevel } from "kafkajs";
 
+// Support both Docker (kafka:29092) and local development (localhost:9092)
+const KAFKA_BROKERS = process.env.KAFKA_BROKERS || "localhost:9092";
+
 export const kafka = new Kafka({
     clientId: "tx-system",
-    brokers: ["localhost:9092"],
+    brokers: KAFKA_BROKERS.split(","),
     logLevel: logLevel.NOTHING
 });
 

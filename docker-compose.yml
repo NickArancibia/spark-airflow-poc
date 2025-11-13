@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
@@ -31,6 +30,60 @@ services:
       - ./:/app:ro
     working_dir: /app
     command: ["node", "/app/seed/redis_init.mjs"]
+
+  # Backend Services
+  validator:
+    build: .
+    command: node validator/index.js
+    depends_on:
+      - kafka
+      - redis
+      - redis-init
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    restart: unless-stopped
+
+  liquidity:
+    build: .
+    command: node liquidity/index.js
+    depends_on:
+      - kafka
+      - redis
+      - redis-init
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    restart: unless-stopped
+
+  payment:
+    build: .
+    command: node payment/index.js
+    depends_on:
+      - kafka
+      - redis
+      - redis-init
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    restart: unless-stopped
+
+  api-server:
+    build: .
+    command: node server/server.js
+    ports:
+      - "3000:3000"
+    depends_on:
+      - kafka
+      - redis
+      - redis-init
+      - validator
+      - liquidity
+      - payment
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:29092
+    restart: unless-stopped
 
 volumes:
   redis-data:

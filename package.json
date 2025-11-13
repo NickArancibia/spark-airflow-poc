@@ -13,6 +13,7 @@
         "uuid": "^9.0.1"
     },
     "scripts": {
+        "start": "./start-docker.sh",
         "up": "docker compose up -d",
         "down": "docker compose down",
         "validator": "node validator/index.js",
@@ -20,10 +21,6 @@
         "payment": "node payment/index.js",
         "cli": "node cli/index.js",
         "server": "node server/server.js",
-        "dev:validator": "nodemon validator/index.js",
-        "dev:liquidity": "nodemon liquidity/index.js",
-        "dev:payment": "nodemon payment/index.js",
-        "dev:server": "nodemon server/server.js",
         "dev:all": "concurrently -n validator,liquidity,payment,server -c green,blue,magenta,cyan \"nodemon validator/index.js\" \"nodemon liquidity/index.js\" \"nodemon payment/index.js\" \"nodemon server/server.js\""
     },
     "devDependencies": {

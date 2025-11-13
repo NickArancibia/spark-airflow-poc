@@ -1,0 +1,32 @@
+# Archivos de desarrollo
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de sistema
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.iml
+
+# Archivos de test
+coverage/
+.nyc_output/
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# Docker
+.dockerignore
