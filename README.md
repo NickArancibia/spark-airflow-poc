@@ -76,6 +76,7 @@ docker compose up -d
 ```
 
 Este comando levanta **todos los servicios** en contenedores Docker.
+Ten en cuenta que si lo haces con npm start podrás tener la confirmación de que los servicios están funcionando correctamente.
 
 **Paso 2: Esperar unos segundos** hasta que todos los servicios estén listos.
 
@@ -215,11 +216,7 @@ El CLI proporciona las siguientes funcionalidades:
 
 **Resultado esperado:**
 ```
-✅ Transacción completada exitosamente
-
-╔══════════════════════════════════════╗
-║ 📊 Detalles de la Transacción       ║
-╚══════════════════════════════════════╝
+✔ Transacción completada exitosamente
 
 Estado:           ✅ Completada
 Monto USD:        $100.00
@@ -248,16 +245,10 @@ Timestamp:        2025-11-12T15:30:45.123Z
 
 **Resultado esperado:**
 ```
-❌ Transacción rechazada
+✖ Error en la transacción
 
-╔══════════════════════════════════════╗
-║ ⚠️  Error en la Transacción          ║
-╚══════════════════════════════════════╝
-
-Estado:           ❌ Rechazada
-Razón:            Insufficient balance
-Email:            user2@example.com
-Timestamp:        2025-11-12T15:32:10.456Z
+❌ Error 422: Unknown error
+   Transaction was rejected during validation
 ```
 
 **Balance después:** $120.43 (sin cambios)
