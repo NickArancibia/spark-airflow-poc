@@ -1,4 +1,3 @@
-import { commitLiquidity } from "../liquidity/liquidity_service.js";
 import { kafka, topic, ensureTopic, producerTx } from "../shared/kafka.js";
 import { subtractFromBalance } from "../data/users.js";
 
@@ -11,6 +10,10 @@ const processedTransactions = new Set();
 await ensureTopic();
 await consumer.connect();
 await consumer.subscribe({ topic, fromBeginning: false });
+
+// Warmup delay to let Kafka stabilize
+console.log("[payment] Waiting for Kafka to stabilize...");
+await new Promise(resolve => setTimeout(resolve, 2000));
 
 console.log("[payment] listening…");
 
@@ -36,21 +39,21 @@ await consumer.run({
                 const usdAmount = evt.payload.fiat;
                 const btcAmount = evt.payload.btc_amount;
 
-                // Step 1: Commit liquidity first (this validates the reservation exists)
-                commitLiquidity(btcAmount);
-                console.log(`[payment] ✓ Committed ₿${btcAmount.toFixed(8)} from liquidity`);
+                console.log(`[payment] 🔄 Processing payment: $${usdAmount} (₿${btcAmount.toFixed(8)}) for ${email}`);
 
-                // Step 2: Deduct user balance (only after liquidity is confirmed)
+                // Step 1: Deduct user balance
                 subtractFromBalance(email, usdAmount);
                 console.log(`[payment] ✓ Deducted $${usdAmount} from ${email}`);
 
-                // Step 3: Send PaymentCompleted event
+                // Step 2: Send PaymentCompleted event (liquidity service will commit the BTC)
                 const out = {
                     transaction_id: evt.transaction_id,
                     type: "PaymentCompleted",
                     payload: {
                         invoice_id: "inv-" + Math.random().toString(16).slice(2),
-                        txid: "btc-" + Date.now()
+                        txid: "btc-" + Date.now(),
+                        btc_amount: btcAmount,
+                        email: email
                     },
                     ts: new Date().toISOString()
                 };

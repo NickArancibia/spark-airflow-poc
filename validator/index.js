@@ -6,9 +6,16 @@ const groupId = "validator-service";
 const consumer = kafka.consumer({ groupId });
 const producer = await producerTx("validator-");
 
+// Track processed transactions to avoid duplicates
+const processedTransactions = new Set();
+
 await ensureTopic();
 await consumer.connect();
 await consumer.subscribe({ topic, fromBeginning: false });
+
+// Warmup delay to let Kafka stabilize
+console.log("[validator] Waiting for Kafka to stabilize...");
+await new Promise(resolve => setTimeout(resolve, 2000));
 
 console.log("[validator] listening…");
 
@@ -19,6 +26,16 @@ await consumer.run({
 
         if (evt.type === "NewOrderReceived") {
             console.log('Validator received transaction id', evt.transaction_id);
+
+            // Check if already processed (idempotency)
+            if (processedTransactions.has(evt.transaction_id)) {
+                console.log(`[validator] ⚠️  Transaction ${evt.transaction_id} already processed, skipping`);
+                return;
+            }
+
+            // Mark as processing
+            processedTransactions.add(evt.transaction_id);
+
             const email = evt.email;
             const amount = evt.payload.fiat;
 

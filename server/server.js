@@ -57,6 +57,10 @@ const consumer = kafka.consumer({ groupId: "api-http-server" });
 await consumer.connect();
 await consumer.subscribe({ topic, fromBeginning: false });
 
+// Warmup delay to let Kafka stabilize
+console.log("[api] Waiting for Kafka to stabilize...");
+await new Promise(resolve => setTimeout(resolve, 2000));
+
 // Process response events
 consumer.run({
     eachMessage: async ({ message }) => {
