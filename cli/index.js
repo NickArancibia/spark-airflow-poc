@@ -27,7 +27,7 @@ function createAuthHeader(email, password) {
 function showBanner() {
     console.clear();
     console.log(chalk.cyan.bold("\n╔════════════════════════════════════════════════════════════╗"));
-    console.log(chalk.cyan.bold("║") + chalk.yellow.bold("          💰 BTC TRANSACTION SYSTEM CLI 💰              ") + chalk.cyan.bold("║"));
+    console.log(chalk.cyan.bold("║") + chalk.yellow.bold("          💰 BTC TRANSACTION SYSTEM CLI 💰                  ") + chalk.cyan.bold("║"));
     console.log(chalk.cyan.bold("╚════════════════════════════════════════════════════════════╝"));
     console.log(chalk.gray(`   Connected to: ${API_URL}\n`));
 }

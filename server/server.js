@@ -298,7 +298,7 @@ app.post("/transaction", basicAuth, async (req, res) => {
                     destinationIban,
                     amount
                 },
-                message: "Transaction was rejected during validation",
+                message: resultEvent.payload?.reason || "Transaction was rejected during validation",
                 timestamp: resultEvent.ts
             });
         } else {
