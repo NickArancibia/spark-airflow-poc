@@ -1,41 +1,56 @@
-// In-memory user database
-const users = new Map();
+import { createClient } from 'redis';
 
-// Initialize with some demo users
-users.set("admin@example.com", {
-    email: "admin@example.com",
-    password: "admin123",
-    balanceUsd: 1500.00
+// Redis client setup
+const redisClient = createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-users.set("user1@example.com", {
-    email: "user1@example.com",
-    password: "password123",
-    balanceUsd: 2300.00
-});
+redisClient.on('error', (err) => console.error('[users] Redis Client Error', err));
 
-users.set("user2@example.com", {
-    email: "user2@example.com",
-    password: "password456",
-    balanceUsd: 120.43
-});
+// Connect to Redis
+await redisClient.connect();
+console.log('[users] Connected to Redis');
+
+// Helper to get user key
+function getUserKey(email) {
+    return `user:${email}`;
+}
 
 // Get user by email
-export function getUserByEmail(email) {
-    return users.get(email);
+export async function getUserByEmail(email) {
+    const data = await redisClient.get(getUserKey(email));
+    if (!data) return null;
+    
+    const user = JSON.parse(data);
+    return {
+        email: user.email,
+        password: user.password,
+        balanceUsd: user.balanceUsd
+    };
 }
 
 // Get all users (without passwords)
-export function getAllUsers() {
-    return Array.from(users.values()).map(user => ({
-        email: user.email,
-        balanceUsd: user.balanceUsd
-    }));
+export async function getAllUsers() {
+    const emails = await redisClient.lRange('users_list', 0, -1);
+    const users = [];
+    
+    for (const email of emails) {
+        const data = await redisClient.get(getUserKey(email));
+        if (data) {
+            const user = JSON.parse(data);
+            users.push({
+                email: user.email,
+                balanceUsd: user.balanceUsd
+            });
+        }
+    }
+    
+    return users;
 }
 
 // Authenticate user
-export function authenticateUser(email, password) {
-    const user = users.get(email);
+export async function authenticateUser(email, password) {
+    const user = await getUserByEmail(email);
     if (!user) {
         return null;
     }
@@ -49,8 +64,9 @@ export function authenticateUser(email, password) {
 }
 
 // Create new user
-export function createUser(email, password, initialBalance = 0) {
-    if (users.has(email)) {
+export async function createUser(email, password, initialBalance = 0) {
+    const exists = await redisClient.exists(getUserKey(email));
+    if (exists) {
         throw new Error("User already exists");
     }
 
@@ -60,7 +76,9 @@ export function createUser(email, password, initialBalance = 0) {
         balanceUsd: initialBalance
     };
 
-    users.set(email, newUser);
+    await redisClient.set(getUserKey(email), JSON.stringify(newUser));
+    await redisClient.rPush('users_list', email);
+    
     return {
         email: newUser.email,
         balanceUsd: newUser.balanceUsd
@@ -68,13 +86,15 @@ export function createUser(email, password, initialBalance = 0) {
 }
 
 // Update user balance
-export function updateBalance(email, newBalance) {
-    const user = users.get(email);
+export async function updateBalance(email, newBalance) {
+    const user = await getUserByEmail(email);
     if (!user) {
         throw new Error("User not found");
     }
 
     user.balanceUsd = newBalance;
+    await redisClient.set(getUserKey(email), JSON.stringify(user));
+    
     return {
         email: user.email,
         balanceUsd: user.balanceUsd
@@ -82,13 +102,15 @@ export function updateBalance(email, newBalance) {
 }
 
 // Add to balance
-export function addToBalance(email, amount) {
-    const user = users.get(email);
+export async function addToBalance(email, amount) {
+    const user = await getUserByEmail(email);
     if (!user) {
         throw new Error("User not found");
     }
 
     user.balanceUsd += amount;
+    await redisClient.set(getUserKey(email), JSON.stringify(user));
+    
     return {
         email: user.email,
         balanceUsd: user.balanceUsd
@@ -96,8 +118,8 @@ export function addToBalance(email, amount) {
 }
 
 // Subtract from balance
-export function subtractFromBalance(email, amount) {
-    const user = users.get(email);
+export async function subtractFromBalance(email, amount) {
+    const user = await getUserByEmail(email);
     if (!user) {
         throw new Error("User not found");
     }
@@ -107,6 +129,8 @@ export function subtractFromBalance(email, amount) {
     }
 
     user.balanceUsd -= amount;
+    await redisClient.set(getUserKey(email), JSON.stringify(user));
+    
     return {
         email: user.email,
         balanceUsd: user.balanceUsd
@@ -114,8 +138,8 @@ export function subtractFromBalance(email, amount) {
 }
 
 // Check if user has sufficient balance
-export function hasSufficientBalance(email, amount) {
-    const user = users.get(email);
+export async function hasSufficientBalance(email, amount) {
+    const user = await getUserByEmail(email);
     if (!user) {
         return false;
     }
@@ -123,8 +147,8 @@ export function hasSufficientBalance(email, amount) {
 }
 
 // Get user balance
-export function getBalance(email) {
-    const user = users.get(email);
+export async function getBalance(email) {
+    const user = await getUserByEmail(email);
     if (!user) {
         throw new Error("User not found");
     }
@@ -132,17 +156,21 @@ export function getBalance(email) {
 }
 
 // Delete user
-export function deleteUser(email) {
-    if (!users.has(email)) {
+export async function deleteUser(email) {
+    const exists = await redisClient.exists(getUserKey(email));
+    if (!exists) {
         throw new Error("User not found");
     }
-    users.delete(email);
+    
+    await redisClient.del(getUserKey(email));
+    await redisClient.lRem('users_list', 0, email);
+    
     return true;
 }
 
 // Update password
-export function updatePassword(email, oldPassword, newPassword) {
-    const user = users.get(email);
+export async function updatePassword(email, oldPassword, newPassword) {
+    const user = await getUserByEmail(email);
     if (!user) {
         throw new Error("User not found");
     }
@@ -152,42 +180,59 @@ export function updatePassword(email, oldPassword, newPassword) {
     }
 
     user.password = newPassword;
+    await redisClient.set(getUserKey(email), JSON.stringify(user));
+    
     return true;
 }
 
 // Check if user exists
-export function userExists(email) {
-    return users.has(email);
+export async function userExists(email) {
+    const exists = await redisClient.exists(getUserKey(email));
+    return exists === 1;
 }
 
 // Get user count
-export function getUserCount() {
-    return users.size;
+export async function getUserCount() {
+    const count = await redisClient.lLen('users_list');
+    return count;
 }
 
 // Reset database (useful for testing)
-export function resetDatabase() {
-    users.clear();
+export async function resetDatabase() {
+    // Get all user emails and delete them
+    const emails = await redisClient.lRange('users_list', 0, -1);
+    for (const email of emails) {
+        await redisClient.del(getUserKey(email));
+    }
+    await redisClient.del('users_list');
 
     // Re-initialize with demo users
-    users.set("admin@example.com", {
-        email: "admin@example.com",
-        password: "admin123",
-        balanceUsd: 10000.00
-    });
+    const demoUsers = [
+        {
+            email: "admin@example.com",
+            password: "admin123",
+            balanceUsd: 10000.00
+        },
+        {
+            email: "user1@example.com",
+            password: "password123",
+            balanceUsd: 5000.00
+        },
+        {
+            email: "user2@example.com",
+            password: "password456",
+            balanceUsd: 2500.50
+        }
+    ];
 
-    users.set("user1@example.com", {
-        email: "user1@example.com",
-        password: "password123",
-        balanceUsd: 5000.00
-    });
-
-    users.set("user2@example.com", {
-        email: "user2@example.com",
-        password: "password456",
-        balanceUsd: 2500.50
-    });
+    for (const user of demoUsers) {
+        await redisClient.set(getUserKey(user.email), JSON.stringify(user));
+        await redisClient.rPush('users_list', user.email);
+    }
 
     return true;
 }
+
+// Export client for cleanup
+export { redisClient };
 

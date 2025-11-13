@@ -10,7 +10,7 @@ const REQUEST_TIMEOUT = 30000; // 30 seconds
 const BTC_PRICE_USD = 101232.12; // BTC price (in production, this would come from an oracle/API)
 
 // Basic Authentication middleware
-const basicAuth = (req, res, next) => {
+const basicAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Basic ")) {
@@ -26,7 +26,7 @@ const basicAuth = (req, res, next) => {
     const [email, password] = credentials.split(":");
 
     // Authenticate user using database
-    const user = authenticateUser(email, password);
+    const user = await authenticateUser(email, password);
 
     if (!user) {
         return res.status(401).json({
@@ -106,7 +106,7 @@ app.get("/system/info", (req, res) => {
 });
 
 // Get specific user by email
-app.get("/users/:email", basicAuth, (req, res) => {
+app.get("/users/:email", basicAuth, async (req, res) => {
     try {
         const { email } = req.params;
 
@@ -119,7 +119,7 @@ app.get("/users/:email", basicAuth, (req, res) => {
             });
         }
 
-        if (!userExists(email)) {
+        if (!(await userExists(email))) {
             return res.status(404).json({
                 success: false,
                 error: "Not found",
@@ -127,7 +127,7 @@ app.get("/users/:email", basicAuth, (req, res) => {
             });
         }
 
-        const user = getUserByEmail(email);
+        const user = await getUserByEmail(email);
         res.json({
             success: true,
             user: {
@@ -147,7 +147,7 @@ app.get("/users/:email", basicAuth, (req, res) => {
 });
 
 // Get user balance
-app.get("/users/:email/balance", basicAuth, (req, res) => {
+app.get("/users/:email/balance", basicAuth, async (req, res) => {
     try {
         const { email } = req.params;
 
@@ -160,7 +160,7 @@ app.get("/users/:email/balance", basicAuth, (req, res) => {
             });
         }
 
-        if (!userExists(email)) {
+        if (!(await userExists(email))) {
             return res.status(404).json({
                 success: false,
                 error: "Not found",
@@ -168,7 +168,7 @@ app.get("/users/:email/balance", basicAuth, (req, res) => {
             });
         }
 
-        const balance = getBalance(email);
+        const balance = await getBalance(email);
         res.json({
             success: true,
             email: email,

@@ -56,7 +56,7 @@ await consumer.run({
             }
 
             // Check if user exists
-            if (!userExists(email)) {
+            if (!(await userExists(email))) {
                 const out = {
                     transaction_id: evt.transaction_id,
                     type: "Rejected",
@@ -73,7 +73,7 @@ await consumer.run({
             }
 
             // Check if user has sufficient balance
-            if (!hasSufficientBalance(email, amount)) {
+            if (!(await hasSufficientBalance(email, amount))) {
                 const out = {
                     transaction_id: evt.transaction_id,
                     type: "Rejected",

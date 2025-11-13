@@ -8,7 +8,6 @@ const producer = await producerTx("liquidity-");
 const processedTransactions = new Set();
 const committedTransactions = new Set();
 
-
 await ensureTopic();
 await consumer.connect();
 await consumer.subscribe({ topic, fromBeginning: false });

@@ -42,7 +42,7 @@ await consumer.run({
                 console.log(`[payment] 🔄 Processing payment: $${usdAmount} (₿${btcAmount.toFixed(8)}) for ${email}`);
 
                 // Step 1: Deduct user balance
-                subtractFromBalance(email, usdAmount);
+                await subtractFromBalance(email, usdAmount);
                 console.log(`[payment] ✓ Deducted $${usdAmount} from ${email}`);
 
                 // Step 2: Send PaymentCompleted event (liquidity service will commit the BTC)

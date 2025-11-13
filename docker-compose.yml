@@ -15,3 +15,22 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on: [zookeeper]
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  redis-init:
+    image: node:18-alpine
+    depends_on:
+      - redis
+    volumes:
+      - ./:/app:ro
+    working_dir: /app
+    command: ["node", "/app/seed/redis_init.mjs"]
+
+volumes:
+  redis-data:
