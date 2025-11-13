@@ -6,14 +6,11 @@ Sistema distribuido basado en eventos para procesamiento de transacciones BTC en
 
 - [Arquitectura](#-arquitectura)
 - [Requisitos Previos](#-requisitos-previos)
-- [Instalación](#-instalación)
 - [Inicio Rápido](#-inicio-rápido)
 - [Componentes del Sistema](#-componentes-del-sistema)
 - [Flujo de Transacciones](#-flujo-de-transacciones)
 - [Uso del CLI](#-uso-del-cli)
 - [Ejemplos de Uso](#-ejemplos-de-uso)
-- [API REST](#-api-rest)
-- [Troubleshooting](#-troubleshooting)
 
 ## 🏗 Arquitectura
 
