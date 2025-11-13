@@ -5,6 +5,9 @@ import { subtractFromBalance } from "../data/users.js";
 const consumer = kafka.consumer({ groupId: "payment-service" });
 const producer = await producerTx("payment-");
 
+// Track processed transactions to avoid duplicates
+const processedTransactions = new Set();
+
 await ensureTopic();
 await consumer.connect();
 await consumer.subscribe({ topic, fromBeginning: false });
@@ -19,19 +22,29 @@ await consumer.run({
         if (evt.type === "LiquidityReady") {
             console.log('[payment] Payment received transaction id', evt.transaction_id);
 
+            // Check if already processed (idempotency)
+            if (processedTransactions.has(evt.transaction_id)) {
+                console.log(`[payment] ⚠️  Transaction ${evt.transaction_id} already processed, skipping`);
+                return;
+            }
+
             try {
-                // Deduct user balance
+                // Mark as processing
+                processedTransactions.add(evt.transaction_id);
+
                 const email = evt.email;
                 const usdAmount = evt.payload.fiat;
-                subtractFromBalance(email, usdAmount);
-                console.log(`[payment] ✓ Deducted $${usdAmount} from ${email}`);
-
-                // Commit liquidity (convert reserved to actual usage)
                 const btcAmount = evt.payload.btc_amount;
+
+                // Step 1: Commit liquidity first (this validates the reservation exists)
                 commitLiquidity(btcAmount);
                 console.log(`[payment] ✓ Committed ₿${btcAmount.toFixed(8)} from liquidity`);
 
-                // Simulate invoice request and payment
+                // Step 2: Deduct user balance (only after liquidity is confirmed)
+                subtractFromBalance(email, usdAmount);
+                console.log(`[payment] ✓ Deducted $${usdAmount} from ${email}`);
+
+                // Step 3: Send PaymentCompleted event
                 const out = {
                     transaction_id: evt.transaction_id,
                     type: "PaymentCompleted",
@@ -46,7 +59,11 @@ await consumer.run({
                 console.log("[payment] →", out.type, key);
             } catch (error) {
                 console.error(`[payment] ✗ Error processing payment for ${evt.transaction_id}:`, error.message);
-                // Even on error, we should send a response to avoid timeout
+
+                // Remove from processed set so it can be retried if needed
+                processedTransactions.delete(evt.transaction_id);
+
+                // Send rejection event to avoid timeout
                 const errorOut = {
                     transaction_id: evt.transaction_id,
                     type: "Rejected",
